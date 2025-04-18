@@ -6,24 +6,26 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "debug":"node --inspect ."
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^5.1.0",
     "morgan": "^1.10.0",
-    "pug": "^3.0.3"
+    "pug": "^3.0.3",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.14.1",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.1.2",
     "nodemon": "^3.1.9",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.4",
-    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
 }
