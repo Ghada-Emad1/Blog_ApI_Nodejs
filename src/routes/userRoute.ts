@@ -1,78 +1,117 @@
 import express, { NextFunction, Request, Response } from "express";
-import fs from "fs/promises";
-import path from "path";
-import { Error } from "../types";
+
 import { AppError } from "../utils/AppError";
-const app = express();
+import { User } from "../Models/User";
+
 
 const router = express.Router();
 
 //get all users
-router.get("/", async (req: Request, res: Response,next:NextFunction) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
+  //return all without password field
+  // const users = await User.find();
+  //return all with password
   try {
-    const dbpath = path.join(__dirname, "./../../db.json");
-    // console.log('dir name', __dirname);
-    // console.log('file name', __filename);
-    // console.log('exports', exports);
-    const stringData = await fs.readFile(dbpath, "utf-8");
-    const users= JSON.parse(stringData);
-    // console.log(user)
-    // if there is an error will go to the next() and next() will send hime to the global handling middleware not the handling error we create
-    if (!users.lenght) {
-      // console.log('error lenght is not 10');
-      // const error: Error = {
-      //   message: "Somtehing went wrong ",
-      //   statusCode: 500,
-      //   status: "fail",
-        
-      // };
-      // throw error;
-      throw new AppError('Something went wrong', 500);
+    const users = await User.find().select("+password");
+    if (!users.length) {
+      return next(new AppError("cant find users", 404));
     }
-    // const x = 90;
-    // console.log('there is no error');
-    // next(); // will go to the one we just created.
-    res.send(users);
-  } catch (err: Error | any) {
-    //if there error will go directly to global error handler not the one you created
-    next(err); // will go to the global handling error
+
+    res.status(200).json({
+      message: "sucess",
+      results: users.length,
+      data: users,
+    });
+  } catch (err: any) {
+    next(new AppError(err.message, 500));
   }
-
 });
 
-
-router.use((req: Request, res: Response, next: NextFunction)=> {
-  console.log('from inside normal middleware');
-  const x = 8;
-})
- 
-
-router.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.log("from inside error handler", err);
-  res.status(err.statusCode || 500).send({
-    statusCode: err.statusCode || 500,
-    message: err.message || "Internal Server Error",
-    errors:[]
-  });
-});
 //create a user
-router.get("/", (req: Request, res: Response) => {
-  res.send("sucess");
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { username, email, password } = req.body;
+    if (!username || !email || !password) {
+      return next(new AppError("please Provide all requirements", 400));
+    }
+    const user = await User.create({ username, email, password });
+    //201 created successfully
+    res.status(201).json({
+      message: "success",
+      data: user,
+    });
+
+  } catch (err: any) {
+    next(new AppError(err.message, 500));
+  }
 });
 
 //get single user
-router.post("/users/:id", (req: Request, res: Response) => {
-  res.send("sucess");
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(new AppError("Can't find user with this id", 404));
+    }
+    res.status(200).json({
+      message: "success",
+      data: user,
+    });
+  } catch (err: any) {
+    next(new AppError(err.message, 500));
+  }
 });
 
 //update a user
-router.put("/users/:id", (req: Request, res: Response) => {
-  res.send("sucess");
+router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { username, email } = req.body;
+    const userId = req.params.id;
+    //findByIdAndUpdate already do save to database
+    if (!username || !email) {
+      return next(new AppError('You should require email and username'));
+    }
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        username: username,
+        email: email,
+        new: true,
+      },
+      // new return the updated user 
+      // runVaildaotr enure the updated respect of your schema
+      { new: true, runValidators: true }
+    );
+    if (!user) {
+      return next(new AppError(`can't find this user with ${userId}`, 404));
+    }
+
+    res.status(200).json({
+      message: "success",
+      data: user,
+    });
+  } catch (err: any) {
+    next(new AppError(err.message, 500));
+  }
 });
 
 //delete a user
-router.delete("/users/:id", (req: Request, res: Response) => {
-  res.send("sucess");
+router.delete("/:id", async(req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.id;
+  const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return next(new AppError(`can't find user with ${userId}`, 404));
+    }
+    res.status(200).json({
+      message: 'Deleted Successfully',
+      deletedUser:user
+    })
+  } catch (err:any) {
+    next(new AppError(err.message,500))
+  }
+  
 });
 
 export default router;
