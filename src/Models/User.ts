@@ -1,7 +1,7 @@
 //define the schema of database 
 
 import mongoose, { Schema } from "mongoose";
-import { UserSchema } from "../utils/types";
+import { UserSchema } from "../types/types";
 
 const userSchema = new Schema<UserSchema>({
   username: {

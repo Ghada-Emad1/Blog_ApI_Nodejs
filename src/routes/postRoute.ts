@@ -1,10 +1,11 @@
 import express, { Request,Response} from "express";
+import { verifiyUser } from "../middlewares/verifiyUser";
 const router = express.Router();
 
 
 //create post
-router.post('/', (req:Request, res:Response) => {
-    res.send('sucess')
+router.post('/',verifiyUser, (req:Request, res:Response) => {
+   res.send('success')
 })
 
 //get all posts
