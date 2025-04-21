@@ -2,6 +2,8 @@ import express, { NextFunction, Request, Response } from "express";
 
 import { AppError } from "../utils/AppError";
 import { User } from "../Models/User";
+import { vaildateUser } from "../middlewares/vaildation";
+import { Login, signUp } from "../controllers/authController";
 
 
 const router = express.Router();
@@ -28,7 +30,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
 });
 
 //create a user
-router.post("/", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/",signUp,vaildateUser,Login, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { username, email, password } = req.body;
     if (!username || !email || !password) {
