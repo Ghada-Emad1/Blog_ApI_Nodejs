@@ -5,19 +5,41 @@ import { UserSchema } from "../types/types";
 
 const userSchema = new Schema<UserSchema>({
   username: {
-    type: "string",
+    type: String,
     required: true,
   },
   email: {
-    type: "string",
+    type: String,
     required: true,
     unique: true,
   },
   password: {
-    type: "string",
+    type: String,
     required: true,
     select:false
   },
+  verified: {
+    type:Boolean,
+    default:false
+  },
+  verifiedCode: {
+    type: String,
+    select: false
+  },
+  verifiedCodeVaildation: {
+    type: String,
+    select:false
+  },
+  forgetPasswordCode: {
+    type: String,
+    select:false
+  },
+   forgetPasswordCodeVaildation: {
+    type: String,
+    select:false
+  }
+}, {
+  timestamps: true,
 });
 
 // build model in data base , build a collection in database called User with this schema
