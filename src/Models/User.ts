@@ -35,7 +35,7 @@ const userSchema = new Schema<UserSchema>({
     select:false
   },
    forgetPasswordCodeVaildation: {
-    type: String,
+    type:String,
     select:false
   }
 }, {

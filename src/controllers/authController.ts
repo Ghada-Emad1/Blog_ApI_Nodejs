@@ -7,6 +7,8 @@ import dotenv from "dotenv";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/mailer";
+import { send } from "process";
+import { appendFile } from "fs";
 
 dotenv.config();
 export const signUp = async (
@@ -35,23 +37,22 @@ export const signUp = async (
       email,
       password: hashedpassword,
       verifiedCode: verifiedCode,
-      verifiedCodeVaildation: Date.now() + 10 * 60 * 60, // code will vaild for 10 minutes
+      verifiedCodeVaildation: Date.now() + 30 * 60 * 60, // code will vaild for 30 minutes
     });
     //send verification email
-    const verificationLink = `http://localhost:${process.env.PORT}/verify?email=${email}&code=${verifiedCode}`;
+    const port = process.env.PORT || "3000";
+    const verificationLink = `http://localhost:${port}/api/verify?email=${email}&code=${verifiedCode}`;
     await sendEmail(
       email,
       "Verifiy Your Email",
       `click to this to verifiy your account : ${verificationLink}`
     );
 
-    res
-      .status(201)
-      .json({
-        message:
-          "User registered successfully. Please check your email for verification.",
-        user,
-      });
+    res.status(201).json({
+      message:
+        "User registered successfully. Please check your email for verification.",
+      user,
+    });
   } catch (err: any) {
     next(new AppError(err.message, 505));
   }
@@ -93,11 +94,105 @@ export const Login = async (
   }
 };
 
-
-export const VerifyEmail = async (req: Request, res: Response, next: NextFunction) => {
+export const VerifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    
-  } catch {
-    
+    const { email, code } = req.query;
+    //find user related to email
+    const user = await User.findOne({ email }).select(
+      "+verifiedCode +verifiedCodeVaildation"
+    );
+    if (!user) {
+      return next(new AppError("User Not Found", 404));
+    }
+
+    if (
+      user.verifiedCode !== code ||
+      Date.now() > Number(user.verifiedCodeVaildation)
+    ) {
+      return next(new AppError("Invaild or expired verifiation code", 400));
+    }
+
+    user.verified = true;
+    user.verifiedCode = "undefined";
+    user.verifiedCodeVaildation = "undefined";
+    await user.save();
+    res.status(200).json({
+      message: "Account Verified Successfully",
+    });
+  } catch (err: any) {
+    next(new AppError(err.message, 505));
   }
-}
+};
+
+export const forgetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    //1.get user email
+    const user = await User.findOne({ email }).select(
+      "+forgetPasswordCode +forgetPasswordCodeVaildation"
+    );
+    if (!user) {
+      return next(new AppError("User Not Found", 404));
+    }
+    //2. generate reset code
+    const resetCode = crypto.randomBytes(3).toString("hex");
+    user.forgetPasswordCode = resetCode;
+    user.forgetPasswordCodeVaildation = (Date.now() + 30 * 60 * 60).toString();
+    user.save();
+    //3.send mail to user to reset password
+    await sendEmail(
+      email,
+      "Password Reset",
+      `Use this code to reset Your Password ${resetCode}`
+    );
+    res.status(200).json({
+      message: "Password Reset Code Send to Mail",
+    });
+  } catch (err: any) {
+    next(new AppError(err.message, 505));
+  }
+};
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, code, newpassword } = req.body;
+    //1.get user password
+    const user = await User.findOne({ email }).select(
+      "+forgetPasswordCode +forgetPasswordCodeVaildation"
+    );
+    if (!user) {
+      return next(new AppError("User Not Found", 404));
+    }
+    console.log(Date.now(), Number(user.forgetPasswordCodeVaildation));
+    if (
+      user.forgetPasswordCode != code ||
+      Date.now() > Number(user.forgetPasswordCodeVaildation)
+    ) {
+      return next(new AppError("Invaild or Expired code", 404));
+    }
+    //2.hash new password
+    const newpassword_hash = await bcrypt.hash(newpassword, 10);
+    user.password = newpassword_hash;
+    user.forgetPasswordCode = "undefined";
+    user.forgetPasswordCodeVaildation = "undefined";
+    await user.save();
+    res.status(200).json({
+      message: 'Password Reset Successfully',
+      data:user
+    })
+  } catch (err: any) {
+    next(new AppError(err.message, 505));
+  }
+};
