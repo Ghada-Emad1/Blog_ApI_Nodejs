@@ -3,12 +3,13 @@ import { verifiyUser } from "../middlewares/verifiyUser";
 import { Post } from "../Models/Post";
 import { AppError } from "../utils/AppError";
 import { User } from "../Models/User";
+import { VaildatePost } from "../middlewares/vaildation";
 const router = express.Router();
 
 //create Post
 router.post(
   "/",
-  verifiyUser,
+  verifiyUser,VaildatePost,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { title, description, author } = req.body;
