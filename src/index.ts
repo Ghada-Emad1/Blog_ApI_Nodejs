@@ -5,7 +5,8 @@ const app = express();
 const PORT = 3000;
 import postRoutes from "./routes/postRoute";
 import userRoutes from "./routes/userRoute";
-import authRoute from './routes/authRoute'
+import authRoute from './routes/authRoute';
+import imageRoute from './routes/uploadimage'
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -14,6 +15,8 @@ import mongoose from "mongoose";
 
 
 app.use(express.static('public'))
+app.use("/uploads", express.static('uploads'))
+
 app.use(express.json()); // for parsing application/json
 app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 app.use(morgan("combined"));

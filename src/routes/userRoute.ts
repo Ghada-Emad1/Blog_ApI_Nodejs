@@ -4,7 +4,7 @@ import { AppError } from "../utils/AppError";
 import { User } from "../Models/User";
 import { vaildateUser } from "../middlewares/vaildation";
 import { Login, signUp } from "../controllers/authController";
-
+import { upload } from "../utils/StoreageImage";
 
 const router = express.Router();
 
@@ -30,23 +30,28 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
 });
 
 //create a user
-router.post("/",signUp,vaildateUser,Login, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
-      return next(new AppError("please Provide all requirements", 400));
+router.post(
+  "/",
+  signUp,
+  vaildateUser,
+  Login,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { username, email, password } = req.body;
+      if (!username || !email || !password) {
+        return next(new AppError("please Provide all requirements", 400));
+      }
+      const user = await User.create({ username, email, password });
+      //201 created successfully
+      res.status(201).json({
+        message: "success",
+        data: user,
+      });
+    } catch (err: any) {
+      next(new AppError(err.message, 500));
     }
-    const user = await User.create({ username, email, password });
-    //201 created successfully
-    res.status(201).json({
-      message: "success",
-      data: user,
-    });
-
-  } catch (err: any) {
-    next(new AppError(err.message, 500));
   }
-});
+);
 
 //get single user
 router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
@@ -72,7 +77,7 @@ router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.params.id;
     //findByIdAndUpdate already do save to database
     if (!username || !email) {
-      return next(new AppError('You should require email and username'));
+      return next(new AppError("You should require email and username"));
     }
     const user = await User.findByIdAndUpdate(
       userId,
@@ -81,7 +86,7 @@ router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
         email: email,
         new: true,
       },
-      // new return the updated user 
+      // new return the updated user
       // runVaildaotr enure the updated respect of your schema
       { new: true, runValidators: true }
     );
@@ -99,21 +104,54 @@ router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
 });
 
 //delete a user
-router.delete("/:id", async(req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = req.params.id;
-  const user = await User.findByIdAndDelete(userId);
-    if (!user) {
-      return next(new AppError(`can't find user with ${userId}`, 404));
+router.delete(
+  "/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.params.id;
+      const user = await User.findByIdAndDelete(userId);
+      if (!user) {
+        return next(new AppError(`can't find user with ${userId}`, 404));
+      }
+      res.status(200).json({
+        message: "Deleted Successfully",
+        deletedUser: user,
+      });
+    } catch (err: any) {
+      next(new AppError(err.message, 500));
     }
-    res.status(200).json({
-      message: 'Deleted Successfully',
-      deletedUser:user
-    })
-  } catch (err:any) {
-    next(new AppError(err.message,500))
   }
-  
-});
+);
 
+router.post(
+  "/:id/upload-profile",
+  upload.single("profileImage"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.params.id;
+      if (!req.file) {
+        return next(new AppError("No File Uploaded", 404));
+      }
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        {
+          profileImage: req.file.filename,
+        },
+        {
+          new: true,
+        }
+      );
+      if (!updatedUser) {
+        return next(new AppError("User Not Found", 404));
+      }
+      res.status(200).json({
+        message: "Profile Image Uploaded Sucessfully",
+        profileImageUrl: `/uploads/${req.file.filename}`,
+        data: updatedUser,
+      });
+    } catch (err: any) {
+      next(new AppError(err.message, 505));
+    }
+  }
+);
 export default router;

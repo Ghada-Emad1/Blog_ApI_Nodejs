@@ -15,6 +15,7 @@ export interface UserSchema {
   verifiedCode: string;
   forgetPasswordCode: string;
   forgetPasswordCodeVaildation: string;
+  profileImage: string;
 }
 export interface PostSchema{
     title: string;

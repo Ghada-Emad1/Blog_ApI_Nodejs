@@ -8,9 +8,15 @@
   </head>
   <body>
     <h1>Get all users</h1>
-    <ul class="users">
-       
-    </ul>
+    <ul class="users"></ul>
+    <form
+      action="http://localhost:3000/upload"
+      method="POST"
+      enctype="multipart/form-data"
+    >
+      <input type="file" name="image" />
+      <button type="submit">Upload Image</button>
+    </form>
   </body>
 
   <script src="index.js"></script>

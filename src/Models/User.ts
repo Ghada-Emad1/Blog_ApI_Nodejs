@@ -37,7 +37,11 @@ const userSchema = new Schema<UserSchema>({
    forgetPasswordCodeVaildation: {
     type:String,
     select:false
-  }
+  },
+  profileImage: {
+    type: String,
+    select:false
+   }
 }, {
   timestamps: true,
 });
