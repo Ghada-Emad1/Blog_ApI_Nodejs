@@ -123,6 +123,7 @@ router.delete(
   }
 );
 
+//upload profile image
 router.post(
   "/:id/upload-profile",
   upload.single("profileImage"),

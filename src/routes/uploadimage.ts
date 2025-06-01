@@ -23,6 +23,6 @@ router.post(
 );
 
 
-//upload profile image
+
 
 export default router;
